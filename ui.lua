@@ -277,10 +277,18 @@ ui:SetScript("OnUpdate", function()
       root.filter = {}
 
       -- prepare all filter texts
+      local count = 1;
       local filter_texts = { utils.strsplit(',', config.filter) }
       for id, filter_text in pairs(filter_texts) do
         local name, args = utils.strsplit(':', filter_text)
-        root.filter[name] = args or true
+        local group, realName = utils.strsplit('@', name)
+        group = group or ('default' .. count);
+        count = count + 1
+        if not root.filter[group] then
+          root.filter[group] = {}
+        end
+        root.filter[group][realName] = args or true
+        -- root.filter[name] = args or true
       end
 
       -- mark current state of data
@@ -292,13 +300,32 @@ ui:SetScript("OnUpdate", function()
     local width, height = config.width, config.height + title_size
     local x, y, count = 0, 0, 0
     for guid, time in pairs(ShaguScan.core.guids) do
+
       -- apply filters
       local visible = true
+      for group, subFilter in pairs(root.filter) do
+        local groupPassed = false
+        for name, args in pairs(subFilter) do
+          if filter[name] then
+            if filter[name](guid, args) then
+              groupPassed = true
+              break
+            end
+          end
+        end
+        visible = visible and groupPassed
+        
+        if not visible then
+          break
+        end
+      end
+      --[[
       for name, args in pairs(root.filter) do
         if filter[name] then
           visible = visible and filter[name](guid, args)
         end
       end
+      ]]
 
       -- display element if filters allow it
       if UnitExists(guid) and visible then
