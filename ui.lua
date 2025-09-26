@@ -281,9 +281,13 @@ ui:SetScript("OnUpdate", function()
       local filter_texts = { utils.strsplit(',', config.filter) }
       for id, filter_text in pairs(filter_texts) do
         local name, args = utils.strsplit(':', filter_text)
+        
+        if not string.find(name, "@") then
+            name = ('default' .. count .. '@' .. name)
+            count = count + 1
+        end
+
         local group, realName = utils.strsplit('@', name)
-        group = group or ('default' .. count);
-        count = count + 1
         if not root.filter[group] then
           root.filter[group] = {}
         end
